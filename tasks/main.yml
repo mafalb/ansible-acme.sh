@@ -1,0 +1,31 @@
+---
+
+- name: check for acme.sh
+  stat:
+    path: /root/.acme.sh/acme.sh
+  register: __acme_sh
+
+- debug: var=__acme_sh
+  tags:
+    - debug
+    - never
+
+- block:
+
+  - name: copy over acme.sh to tmp dir
+    synchronize:
+      src: acme.sh
+      dest: /tmp
+      archive: false
+      recursive: true
+      times: true
+      rsync_opts:
+        - "--exclude=.git"
+
+  - name: install acme.sh
+    command: bash /tmp/acme.sh/acme.sh --install --log
+    args:
+      chdir: /tmp/acme.sh
+      creates: /root/.acme.sh/acme.sh
+
+  when: __acme_sh.stat.exists == false
